@@ -33,6 +33,7 @@
 
   "background": {
     "scripts": [
+      "webextension/content/axios.min.js",
       "webextension/content/socket.js",
       "webextension/content/tlsn_utils.js",
       "webextension/content/oracles.js",
@@ -51,7 +52,6 @@
       "webextension/content/pako.js",
       "webextension/content/tlsn.js",
       "webextension/content/main.js",
-      "webextension/content/testing/testing.js",
       "webextension/content/verifychain/buffer.js",
       "webextension/content/verifychain/asn1.js",
       "webextension/content/verifychain/jsrsasign-latest-all-min.js",
