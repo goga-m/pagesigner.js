@@ -42,6 +42,7 @@ sendMessage({
 
 
 function process_message(data) {
+  console.log('process message popup', data)
   if (data.destination !== 'popup') return;
   if (data.message === 'app_not_installed') {
     document.getElementById("app_not_installed").removeAttribute('hidden');

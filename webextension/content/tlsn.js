@@ -232,9 +232,13 @@ function get_certificate(server, port) {
     'port': port,
     'tlsver': global_tlsver
   });
+  console.log('DEBUG:100, get_certificate probe_session')
+  console.log(probe_session.server_name, probe_session.ssl_port)
+
   probe_session.sckt = new Socket(probe_session.server_name, probe_session.ssl_port);
   return probe_session.sckt.connect()
     .then(function() {
+      console.log('DEBUG:101, CONNECTED')
       probe_session.send_client_hello();
       return probe_session.get_server_hello();
     })
@@ -282,7 +286,7 @@ function start_audit(modulus, certhash, name, port, headers, ee_secret, ee_pad_s
       }
       var headers_ba = str2ba(headers);
       tlsn_session.build_request(headers_ba);
-      console.log("sent request");
+      console.log('heades', headers)
       return tlsn_session.sckt.recv(false); //#not handshake flag means we wait on timeout
     })
     .then(function(response) {
@@ -315,6 +319,7 @@ function start_audit(modulus, certhash, name, port, headers, ee_secret, ee_pad_s
         throw ('Failed to verify MAC for server finished');
       }
       var plaintext = decrypt_html(tlsn_session);
+      console.log('PLAIN TEXT')
       return [tlsn_session.chosen_cipher_suite,
         tlsn_session.client_random,
         tlsn_session.server_random,
@@ -1167,6 +1172,7 @@ TLSNClientSession.prototype.get_server_hello = function() {
           resolve(handshake_objects);
         })
         .catch(function(e) {
+          console.log('rejected')
           reject(e);
         });
     };

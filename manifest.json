@@ -25,11 +25,7 @@
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
 
 
-  "browser_action": {
-    "default_icon": "webextension/content/icon.png",
-    "default_popup": "webextension/content/popup.html"
-  },
-
+  "browser_action": {}, 
 
   "background": {
     "scripts": [
