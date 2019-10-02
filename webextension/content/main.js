@@ -1,7 +1,21 @@
-if(typeof document === 'undefined') {
-  //Helper variables on NodeJS
+var isNode = typeof document === 'undefined'
+if(isNode) {
+  // Nodejs depedencies
+  var fs = require('fs')
   var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+  var axios = require('axios')
+  var convert = require('xml-js');
+  var atob = require('atob')
+  var btoa = require('btoa')
+
+  //Helper variables on NodeJS
   navigator = {}
+  // Helper functions
+  var xml2json = (xml) => {
+    const jsonData101 = convert.xml2json(xml, { compact: true })
+    const jsonDataJson = JSON.parse(jsonData101)
+    return jsonDataJson
+  }
 }
 
 
@@ -486,6 +500,7 @@ function checkDescribeInstances(xmlDoc, instanceId, IP) {
     var rs = xmlDoc.getElementsByTagName('reservationSet');
     assert(rs.length === 1);
     var rs_items = rs[0].children;
+    console.log(rs_items)
     assert(rs_items.length === 1);
     var ownerId = rs_items[0].getElementsByTagName('ownerId')[0].textContent;
     var isets = rs_items[0].getElementsByTagName('instancesSet');
@@ -512,6 +527,60 @@ function checkDescribeInstances(xmlDoc, instanceId, IP) {
   } catch (e) {
     return false;
   }
+  return {
+    'ownerId': ownerId,
+    'volumeId': volumeId,
+    'volAttachTime': volAttachTime,
+    'launchTime': launchTime
+  };
+}
+
+function checkDescribeInstancesJSON(data, instanceId, IP, imgId) {
+
+  assert('DescribeInstancesResponse' in data)
+  const res = data.DescribeInstancesResponse 
+
+  assert('reservationSet' in res)
+  const rs = res.reservationSet
+
+
+  assert('item' in rs)
+  const rsItem = rs.item
+
+  var ownerId = rsItem.ownerId._text
+
+  assert('instancesSet' in rsItem)
+  assert('item' in rsItem.instancesSet)
+
+  var instance = rsItem.instancesSet.item
+
+  assert('instanceId' in instance)
+  assert('imageId' in instance)
+  assert('instanceState' in instance)
+  assert('launchTime' in instance)
+  assert(instance.instanceId._text === instanceId)
+  assert(instance.imageId._text === imgId)
+  assert(instance.instanceState.name._text === 'running')
+
+  var launchTime = instance.launchTime._text
+
+  assert(instance.ipAddress._text === IP)
+  assert(instance.rootDeviceType._text === 'ebs')
+  assert(instance.rootDeviceName._text === '/dev/xvda')
+  assert('item' in instance.blockDeviceMapping)
+
+  var device = instance.blockDeviceMapping.item
+  assert(device.deviceName._text === '/dev/xvda')
+  assert('status' in device.ebs)
+  assert(device.ebs.status._text === 'attached')
+
+  var volAttachTime = device.ebs.attachTime._text
+  var volumeId = device.ebs.volumeId._text
+
+  assert(getSecondsDelta(volAttachTime, launchTime) <= 3)
+  assert(instance.virtualizationType._text === 'hvm')
+
+
   return {
     'ownerId': ownerId,
     'volumeId': volumeId,
@@ -548,6 +617,79 @@ function checkDescribeVolumes(xmlDoc, instanceId, volumeId, volAttachTime) {
   return true;
 }
 
+function checkDescribeVolumesJSON(data, instanceId, volumeId, volAttachTime, snapshtId) {
+  assert('DescribeVolumesResponse' in data)
+  const res = data.DescribeVolumesResponse 
+
+  assert('volumeSet' in res)
+  assert('item' in res.volumeSet)
+
+  const volume = res.volumeSet.item
+
+  assert('volumeId' in volume)
+  assert('attachmentSet' in volume)
+  assert('item' in volume.attachmentSet)
+
+  assert(volume.volumeId._text === volumeId)
+  assert(volume.snapshotId._text === snapshtId)
+  assert(volume.status._text === 'in-use')
+
+  var volCreateTime = volume.createTime._text
+  var attVolume = volume.attachmentSet.item
+  assert(attVolume.volumeId._text === volumeId)
+  assert(attVolume.instanceId._text === instanceId)
+  assert(attVolume.device._text === '/dev/xvda')
+  assert(attVolume.status._text === 'attached')
+
+  var attTime =  attVolume.attachTime._text
+  assert(attTime === volAttachTime)
+  // //Crucial: volume was created from snapshot and attached at the same instant
+  // //this guarantees that there was no time window to modify it
+  assert(getSecondsDelta(attTime, volCreateTime) === 0)
+  return true;
+}
+
+
+function checkGetConsoleOutputJSON(data, instanceId, launchTime) {
+
+  assert('GetConsoleOutputResponse' in data)
+  const res = data.GetConsoleOutputResponse 
+
+  assert('instanceId' in res)
+  assert(res.instanceId._text === instanceId)
+
+  var timestamp = res.timestamp._text
+  // assert(xmlDoc.getElementsByTagName('instanceId')[0].textContent === instanceId);
+  // var timestamp = xmlDoc.getElementsByTagName('timestamp')[0].textContent;
+  //prevent funny business: last consoleLog entry no later than 5 minutes after instance starts
+  //However, it was once observed that timestamp was switched on 2018-01-01. Maybe AWS resets it
+  //every first day of the year?
+  //
+  // TODO: GOGA EDIT: Allow oracle check
+  // assert(getSecondsDelta(timestamp, launchTime) <= 300)
+  // var b64data = xmlDoc.getElementsByTagName('output')[0].textContent;
+  var b64data = res.output._text
+  var logstr = ba2str(b64decode(b64data));
+  var sigmark = 'PageSigner public key for verification';
+  var pkstartmark = '-----BEGIN PUBLIC KEY-----';
+  var pkendmark = '-----END PUBLIC KEY-----';
+
+  var mark_start = logstr.search(sigmark);
+  assert(mark_start !== -1);
+  var pubkey_start = mark_start + logstr.slice(mark_start).search(pkstartmark);
+  var pubkey_end = pubkey_start + logstr.slice(pubkey_start).search(pkendmark) + pkendmark.length;
+  var chunk = logstr.slice(pubkey_start, pubkey_end);
+  var lines = chunk.split('\n');
+  var pk = pkstartmark + '\n';
+  for (var i = 1; i < lines.length-1; i++) {
+    var words = lines[i].split(' ');
+    pk = pk + words[words.length-1] + '\n';
+  }
+  pk = pk + pkendmark;
+  assert(pk.length > 0);
+
+  return pk
+}
 
 function checkGetConsoleOutput(xmlDoc, instanceId, launchTime) {
   try {
@@ -595,6 +737,17 @@ function checkDescribeInstanceAttribute(xmlDoc, instanceId) {
   return true;
 }
 
+// "userData" allows to pass an arbitrary script to the instance at launch. It MUST be empty.
+// This is a sanity check because the instance is stripped of the code which parses userData.
+function checkDescribeInstanceAttributeJSON(data, instanceId) {
+  assert('DescribeInstanceAttributeResponse' in data)
+  const res = data.DescribeInstanceAttributeResponse 
+
+  assert(res.instanceId._text === instanceId)
+  assert(!('_text' in res.userData))
+  return true
+}
+
 
 function checkGetUser(xmlDoc, ownerId) {
   try {
@@ -606,9 +759,102 @@ function checkGetUser(xmlDoc, ownerId) {
   return true;
 }
 
+function checkGetUserJSON(data, ownerId) {
+  assert('GetUserResponse' in data)
+  const res = data.GetUserResponse 
+
+  assert('GetUserResult' in res)
+  assert('User' in res.GetUserResult)
+
+  const usr = res.GetUserResult.User
+  assert(usr.UserId === ownerId)
+  assert(usr.Arn.indexOf(`${ownerId}:root`) > -1)
+  return true;
+}
+
 
 function check_oracle(o) {
+  // Node environment only
+  if(isNode) {
+
+    // DI
+    return axios.get(o.DI)
+    .then(({ data }) => {
+      return checkDescribeInstancesJSON(xml2json(data), o.instanceId, o.IP, imageID)
+    })
+    .catch(err => { throw('checkDescribeInstances') })
+
+    // DV
+    .then(args => {
+      return axios.get(o.DV)
+      .then(({ data }) => {
+        const result = checkDescribeVolumesJSON(xml2json(data), o.instanceId, args.volumeId, args.volAttachTime, snapshotID)
+        return {
+          'ownerId': args.ownerId,
+          'launchTime': args.launchTime
+        }
+      })
+      .catch(err => { throw('checkDescribeVolumes') })
+    })
+
+    // GU
+    .then(args => {
+      return axios.get(o.GU)
+      .then(({ data }) => {
+        const result = checkGetUserJSON(data, args.ownerId)
+        return args.launchTime
+      })
+      .catch(err => { throw('checkGetUser') })
+    })
+
+    // GCO
+    .then(launchTime => {
+      return axios.get(o.GCO)
+      .then(({ data }) => {
+        try {
+          var result = checkGetConsoleOutputJSON(xml2json(data), o.instanceId, launchTime)
+        }
+        catch (e) {
+          throw('checkGetConsoleOutput')
+        }
+
+        if (modulus_from_pubkey(result).toString() !== o.modulus.toString()) {
+          throw('modulus_from_pubkey')
+        }
+
+        return
+      })
+    })
+
+    // DIA
+    .then(() => {
+      return axios.get(o.DIA)
+      .then(({ data }) => {
+        const result = checkDescribeInstanceAttributeJSON(xml2json(data), o.instanceId);
+        return
+      })
+      .catch(err => { throw('checkDescribeInstanceAttribute') })
+    })
+    .then(() => {
+      var mark = 'AWSAccessKeyId='
+      var start
+      var id
+      var ids = []
+      //"AWSAccessKeyId" should be the same to prove that the queries are made on behalf of AWS user "root".
+      //The attacker can be a user with limited privileges for whom the API would report only partial information.
+      for (var url in [o.DI, o.DV, o.GU, o.GCO, o.DIA]) {
+        start = url.search(mark) + mark.length
+        id = url.slice(start, start + url.slice(start).search('&'))
+        ids.push(id)
+      }
+      assert(new Set(ids).size === 1);
+      console.log('oracle verification successfully finished')
+      return true
+    })
+  }
+
   return new Promise(function(resolve, reject) {
+
       var xhr = get_xhr();
       xhr.open('GET', o.DI, true);
       xhr.onload = function() {
@@ -21717,10 +21963,13 @@ function init() {
         chosen_notary = pagesigner_servers[1];
         oracles_intact = true;
       } else {
+        console.log('checking oracle?')
         chosen_notary = oracles[Math.random() * (oracles.length) << 0];
         var oracle_hash = ba2hex(sha256(JSON.stringify(chosen_notary)));
         var was_oracle_verified = false;
-        getPref('verifiedOracles.' + oracle_hash)
+        import_reliable_sites()
+        .then(() => {
+          getPref('verifiedOracles.' + oracle_hash)
           .then(function(value) {
             if (value === true) {
               oracles_intact = true;
@@ -21738,20 +21987,22 @@ function init() {
                   console.log('caught error', err);
                   //query for a new oracle
                   //TODO fetch backup oracles list
-                });
-            }
+               });
+             }
           });
+        })
       }
-      import_reliable_sites();
       browser_init_finished = true;
     });
 }
 
 
 function import_reliable_sites() {
-  import_resource('pubkeys.txt')
+  return import_resource('pubkeys.txt')
     .then(function(text_ba) {
-      parse_reliable_sites(ba2str(text_ba));
+      const t = parse_reliable_sites(ba2str(text_ba))
+      console.log('Reliable sites are: ', t.map(s => s.name))
+      return t
     });
 }
 
@@ -21759,6 +22010,15 @@ function import_reliable_sites() {
 //we can import chrome:// and file:// URL
 function import_resource(filename) {
   console.log('DEBUG1: import resource', filename)
+
+  if(isNode) {
+  return new Promise(function(resolve, reject) {
+      fs.readFile(`./${filename}`, (err, data) => {
+        resolve(ab2ba(data.buffer))
+      })
+    })
+  }
+
   const pathRoot = 'http://localhost:9000/webextension/content/'
   return new Promise(function(resolve, reject) {
     var xhr = new XMLHttpRequest();
@@ -21810,6 +22070,7 @@ function parse_reliable_sites(text) {
   while (true) {
     i += 1;
     if (i >= lines.length) {
+      return reliable_sites
       break;
     }
     x = lines[i];
@@ -21854,7 +22115,6 @@ function parse_reliable_sites(text) {
         'modulus': modulus
       });
     }
-    console.log('reliable sites are: ', reliable_sites);
   }
 }
 
@@ -22692,7 +22952,7 @@ function initNotarization() {
 //This must be at the bottom, otherwise we'd have to define each function
 //before it gets used.
 init();
+fixcerts();
 setTimeout(() => {
-  fixcerts();
   initNotarization()
-}, 5000)
+}, 15000)
