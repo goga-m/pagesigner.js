@@ -7,6 +7,8 @@ if(isNode) {
   var convert = require('xml-js');
   var atob = require('atob')
   var btoa = require('btoa')
+  var crypto = require('crypto')
+  var getRandomValues = require('get-random-values')
 
   //Helper variables on NodeJS
   navigator = {}
@@ -354,6 +356,12 @@ function log() {
 
 function getRandom(number, window) {
   //window was undefined in this context, so i decided to pass it explicitely
+  if(isNode) {
+    var a = getRandomValues(new Uint8Array(number))
+    var b = Array.prototype.slice.call(a)
+    return b
+  }
+
   var a = window.crypto.getRandomValues(new Uint8Array(number));
   //convert to normal array
   var b = Array.prototype.slice.call(a);
@@ -11618,6 +11626,7 @@ function decrypt_html(tlsn_session) {
 
 
 function get_certificate(server, port) {
+  console.log('GETTING CERTIFICATE', server, port)
   var probe_session = new TLSNClientSession();
   probe_session.__init__({
     'server': server,
@@ -21493,7 +21502,7 @@ function sendSocket(data) {
   if(useNode) {
     return axios.post('http://localhost:3000/', { data })
     .then(( { data: res } ) => {
-      console.log(`COMMAND RESPONSE[${data.command}, ${data.uid}, ${data.args ? data.args.name : ''}]`, res)
+      console.log(`COMMAND RESPONSE[${data.command}, ${data.uid}, ${data.args ? data.args.name : ''}]`, res.length)
       console.log('--------------------------------------------')
       return res
     })
@@ -22098,6 +22107,7 @@ function parse_reliable_sites(text) {
 
 
 function startNotarizing(headers, server, port) {
+  console.log('start notarizing')
   if (!oracles_intact) {
     //NotarizeAfterClick already changed the icon at this point, revert to normal
     // loadNormalIcon();
@@ -22164,8 +22174,11 @@ function startNotarizing(headers, server, port) {
     })
     .then(function() {
       // FINISHED Succesffully
-      console.log('finished')
-      console.log(ResultsStorage)
+      console.log('Notarization finished')
+      // console.log(ResultsStorage)
+      const session = Object.values(ResultsStorage)[0]
+      fs.writeFile('notarize.pgsg', new Buffer(session['pgsg.pgsg']))
+      console.log(Object.values(ResultsStorage)[0])
       return ResultsStorage
     })
     .catch(function(err) {
