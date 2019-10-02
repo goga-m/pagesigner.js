@@ -21945,55 +21945,33 @@ function getHeaders(obj) {
 
 
 function init() {
-  setPref('testing', false)
-    .then(function() {
-      return getPref('verbose');
-    })
-    .then(function(value) {
-      if (value !== true && !is_chrome) {
-		//Firefox pollutes browser window, disable logging
-        console.log = function(){};
-      }
-      return getPref('fallback');
-    })
-    .then(function(value) {
-      if (value === true) {
-        //TODO this should be configurable, e.g. choice from list
-        //or set in prefs
-        chosen_notary = pagesigner_servers[1];
-        oracles_intact = true;
-      } else {
-        console.log('checking oracle?')
-        chosen_notary = oracles[Math.random() * (oracles.length) << 0];
-        var oracle_hash = ba2hex(sha256(JSON.stringify(chosen_notary)));
-        var was_oracle_verified = false;
-        import_reliable_sites()
-        .then(() => {
-          getPref('verifiedOracles.' + oracle_hash)
-          .then(function(value) {
-            if (value === true) {
-              oracles_intact = true;
-            } else {
-              //async check oracles and if the check fails, sets a global var
-              //which prevents notarization session from running
-              check_oracle(chosen_notary)
-                .then(function success() {
-                  return setPref('verifiedOracles.' + oracle_hash, true);
-                })
-                .then(function() {
-                  oracles_intact = true;
-                })
-                .catch(function(err) {
-                  console.log('caught error', err);
-                  //query for a new oracle
-                  //TODO fetch backup oracles list
-               });
-             }
-          });
-        })
-      }
-      browser_init_finished = true;
-    });
+  chosen_notary = oracles[Math.random() * (oracles.length) << 0];
+  var oracle_hash = ba2hex(sha256(JSON.stringify(chosen_notary)));
+  var was_oracle_verified = false;
+
+  return import_reliable_sites()
+  .then(() => getPref('verifiedOracles.' + oracle_hash))
+  .then(value => {
+    // TODO: Is oracles_intact necessary?
+    if (value === true) {
+      oracles_intact = true;
+    } else {
+      //async check oracles and if the check fails, sets a global var
+      //which prevents notarization session from running
+      console.log('checking oracles')
+      return check_oracle(chosen_notary)
+      .then(() => {
+        browser_init_finished = true;
+        return setPref('verifiedOracles.' + oracle_hash, true)
+      })
+      .then(function() {
+        oracles_intact = true
+        console.log('checked oracles')
+        return true
+      })
+     }
+  })
+
 }
 
 
@@ -22133,8 +22111,10 @@ function startNotarizing(headers, server, port) {
   var certsha256;
   var chain;
   // loadBusyIcon();
+  console.log('getting server')
   get_certificate(server, port)
     .then(function(certchain) {
+      console.log('got certificate', certchain)
       chain = certchain;
       if (mustVerifyCert && !verifyCert(chain)) {
         sendAlert({
@@ -22951,8 +22931,9 @@ function initNotarization() {
 
 //This must be at the bottom, otherwise we'd have to define each function
 //before it gets used.
-init();
-fixcerts();
-setTimeout(() => {
+fixcerts()
+init()
+.then(res => {
+  console.log('initialized')
   initNotarization()
-}, 15000)
+})
