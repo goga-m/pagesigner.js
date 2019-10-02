@@ -26,30 +26,7 @@
   "background": {
     "scripts": [
       "webextension/content/axios.min.js",
-      "webextension/content/socket.js",
-      "webextension/content/tlsn_utils.js",
-      "webextension/content/oracles.js",
-      "webextension/content/CryptoJS/components/core.js",
-      "webextension/content/CryptoJS/components/md5.js",
-      "webextension/content/CryptoJS/components/evpkdf.js",
-      "webextension/content/CryptoJS/components/enc-base64.js",
-      "webextension/content/CryptoJS/components/sha1.js",
-      "webextension/content/CryptoJS/components/sha256.js",
-      "webextension/content/CryptoJS/components/hmac.js",
-      "webextension/content/CryptoJS/components/cipher-core.js",
-      "webextension/content/CryptoJS/components/aes.js",
-      "webextension/content/CryptoJS/components/pad-nopadding.js",
-      "webextension/content/jsbn.js",
-      "webextension/content/jsbn2.js",
-      "webextension/content/pako.js",
-      "webextension/content/tlsn.js",
-      "webextension/content/main.js",
-      "webextension/content/verifychain/buffer.js",
-      "webextension/content/verifychain/asn1.js",
-      "webextension/content/verifychain/jsrsasign-latest-all-min.js",
-      "webextension/content/verifychain/rootcertslist.js",
-      "webextension/content/verifychain/rootcerts.js",
-      "webextension/content/verifychain/verifychain.js"
+      "webextension/content/main.js"
     ]
   }
 
