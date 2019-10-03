@@ -1,0 +1,32 @@
+{
+  "name": "pagesigner.js",
+  "version": "0.0.7",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goga-m/pagesigner.git"
+  },
+  "keywords": [
+    "TLSNotary"
+  ],
+  "author": "Goga",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/goga-m/pagesigner/issues"
+  },
+  "homepage": "https://github.com/goga-m/pagesigner#readme",
+  "dependencies": {
+    "asn1.js": "^5.2.0",
+    "atob": "^2.1.2",
+    "axios": "^0.19.0",
+    "btoa": "^1.2.1",
+    "get-random-values": "^1.2.0",
+    "jsrsasign": "^7.2.2",
+    "xml-js": "^1.6.11",
+    "xmlhttprequest": "^1.8.0"
+  }
+}
