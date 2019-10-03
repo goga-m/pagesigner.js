@@ -1,72 +1,69 @@
-var isNode = typeof document === 'undefined'
-if(isNode) {
-  // Nodejs depedencies
-  var fs = require('fs')
-  var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-  var axios = require('axios')
-  var convert = require('xml-js');
-  var atob = require('atob')
-  var btoa = require('btoa')
-  var crypto = require('crypto')
-  var getRandomValues = require('get-random-values')
+// Nodejs depedencies
+var fs = require('fs')
+var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+var axios = require('axios')
+var convert = require('xml-js');
+var atob = require('atob')
+var btoa = require('btoa')
+var crypto = require('crypto')
+var getRandomValues = require('get-random-values')
 
-  //Helper variables on NodeJS
-  navigator = {}
-  // Helper functions
-  var xml2json = (xml) => {
-    const jsonData101 = convert.xml2json(xml, { compact: true })
-    const jsonDataJson = JSON.parse(jsonData101)
-    return jsonDataJson
-  }
-
-
-
-  // Libs
-  var AbstractSocket = require('./libs/socket')
-
-  // Utils
-  var { ba2int, assert } = require('./libs/utils')
-
-
-  // CryptoJS libraries
-  var CryptoJS = require('./libs/CryptoJS/core')
-
-  // tlns_utils
-  var {
-    ab2ba,
-    ba2ab,
-    ba2ua,
-    ua2ba,
-    wa2ba,
-    ba2hex,
-    hex2ba,
-    bi2ba,
-    str2ba,
-    ba2str,
-    hmac,
-    sha1,
-    sha256,
-    md5,
-    xor,
-    isdefined,
-    log,
-    getRandom,
-    b64encode,
-    b64decode,
-    dechunk_http,
-    gunzip_http,
-    getTime
-  } = require('./libs/tlns_utils')
-
-  var { check_oracle } = require('./libs/oracles.js')
-  var { 
-    TLSNClientSession,
-    prepare_pms,
-    get_certificate,
-    decrypt_html,
-    start_audit
-  } = require('./libs/tlsn')
+//Helper variables on NodeJS
+navigator = {}
+// Helper functions
+var xml2json = (xml) => {
+  const jsonData101 = convert.xml2json(xml, { compact: true })
+  const jsonDataJson = JSON.parse(jsonData101)
+  return jsonDataJson
 }
+
+
+
+// Libs
+var AbstractSocket = require('./libs/socket')
+
+// Utils
+var { ba2int, assert } = require('./libs/utils')
+
+
+// CryptoJS libraries
+var CryptoJS = require('./libs/CryptoJS/core')
+
+// tlns_utils
+var {
+  ab2ba,
+  ba2ab,
+  ba2ua,
+  ua2ba,
+  wa2ba,
+  ba2hex,
+  hex2ba,
+  bi2ba,
+  str2ba,
+  ba2str,
+  hmac,
+  sha1,
+  sha256,
+  md5,
+  xor,
+  isdefined,
+  log,
+  getRandom,
+  b64encode,
+  b64decode,
+  dechunk_http,
+  gunzip_http,
+  getTime
+} = require('./libs/tlns_utils')
+
+var { check_oracle } = require('./libs/oracles.js')
+var { 
+  TLSNClientSession,
+  prepare_pms,
+  get_certificate,
+  decrypt_html,
+  start_audit
+} = require('./libs/tlsn')
 
 
 // Globals 
@@ -8574,31 +8571,11 @@ function import_reliable_sites() {
 //we can import chrome:// and file:// URL
 function import_resource(filename) {
   console.log('DEBUG1: import resource', filename)
-
-  if(isNode) {
   return new Promise(function(resolve, reject) {
-      fs.readFile(`./${filename}`, (err, data) => {
-        resolve(ab2ba(data.buffer))
-      })
+    fs.readFile(`./${filename}`, (err, data) => {
+      resolve(ab2ba(data.buffer))
     })
-  }
-
-  const pathRoot = 'http://localhost:9000/webextension/content/'
-  return new Promise(function(resolve, reject) {
-    var xhr = new XMLHttpRequest();
-    xhr.responseType = "arraybuffer";
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState != 4)
-        return;
-
-      if (xhr.response) {
-        resolve(ab2ba(xhr.response));
-      }
-    };
-    const path = pathRoot + filename
-    xhr.open('get', path, true);
-    xhr.send();
-  });
+  })
 }
 
 // function fetch(url) {
