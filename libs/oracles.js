@@ -17,30 +17,30 @@ const xml2json = xml => {
 //difference between them in seconds
 //the time string looks like "2015-04-15T19:00:59.000Z"
 function getSecondsDelta(later, sooner) {
-  assert(later.length == 24);
+  assert(later.length == 24)
   if (later.slice(0, 11) !== sooner.slice(0, 11)) {
-    return 999999; //not on the same day
+    return 999999 //not on the same day
   }
-  var laterTime = later.slice(11, 19).split(':');
-  var soonerTime = sooner.slice(11, 19).split(':');
-  var laterSecs = parseInt(laterTime[0]) * 3600 + parseInt(laterTime[1]) * 60 + parseInt(laterTime[2]);
-  var soonerSecs = parseInt(soonerTime[0]) * 3600 + parseInt(soonerTime[1]) * 60 + parseInt(soonerTime[2]);
-  return laterSecs - soonerSecs;
+  var laterTime = later.slice(11, 19).split(':')
+  var soonerTime = sooner.slice(11, 19).split(':')
+  var laterSecs = parseInt(laterTime[0]) * 3600 + parseInt(laterTime[1]) * 60 + parseInt(laterTime[2])
+  var soonerSecs = parseInt(soonerTime[0]) * 3600 + parseInt(soonerTime[1]) * 60 + parseInt(soonerTime[2])
+  return laterSecs - soonerSecs
 }
 
 
 
 function modulus_from_pubkey(pem_pubkey) {
-  var b64_str = '';
-  var lines = pem_pubkey.split('\n');
+  var b64_str = ''
+  var lines = pem_pubkey.split('\n')
   //omit header and footer lines
   for (var i = 1; i < (lines.length - 1); i++) {
-    b64_str += lines[i];
+    b64_str += lines[i]
   }
-  var der = b64decode(b64_str);
+  var der = b64decode(b64_str)
   //last 5 bytes are 2 DER bytes and 3 bytes exponent, our pubkey is the preceding 512 bytes
-  var pubkey = der.slice(der.length - 517, der.length - 5);
-  return pubkey;
+  var pubkey = der.slice(der.length - 517, der.length - 5)
+  return pubkey
 }
 
 
@@ -48,7 +48,7 @@ function modulus_from_pubkey(pem_pubkey) {
 function checkDescribeInstancesJSON(data, instanceId, IP, imgId) {
 
   assert('DescribeInstancesResponse' in data)
-  const res = data.DescribeInstancesResponse 
+  const res = data.DescribeInstancesResponse
 
   assert('reservationSet' in res)
   const rs = res.reservationSet
@@ -96,14 +96,14 @@ function checkDescribeInstancesJSON(data, instanceId, IP, imgId) {
     'volumeId': volumeId,
     'volAttachTime': volAttachTime,
     'launchTime': launchTime
-  };
+  }
 }
 
 
 function checkDescribeVolumesJSON(data, instanceId, volumeId, volAttachTime, snapId) {
   console.log(instanceId, volumeId, volAttachTime, snapId)
   assert('DescribeVolumesResponse' in data)
-  const res = data.DescribeVolumesResponse 
+  const res = data.DescribeVolumesResponse
 
   assert('volumeSet' in res)
   assert('item' in res.volumeSet)
@@ -130,14 +130,14 @@ function checkDescribeVolumesJSON(data, instanceId, volumeId, volAttachTime, sna
   // //Crucial: volume was created from snapshot and attached at the same instant
   // //this guarantees that there was no time window to modify it
   assert(getSecondsDelta(attTime, volCreateTime) === 0)
-  return true;
+  return true
 }
 
 
 function checkGetConsoleOutputJSON(data, instanceId, launchTime) {
 
   assert('GetConsoleOutputResponse' in data)
-  const res = data.GetConsoleOutputResponse 
+  const res = data.GetConsoleOutputResponse
 
   assert('instanceId' in res)
   assert(res.instanceId._text === instanceId)
@@ -153,24 +153,24 @@ function checkGetConsoleOutputJSON(data, instanceId, launchTime) {
   // assert(getSecondsDelta(timestamp, launchTime) <= 300)
   // var b64data = xmlDoc.getElementsByTagName('output')[0].textContent;
   var b64data = res.output._text
-  var logstr = ba2str(b64decode(b64data));
-  var sigmark = 'PageSigner public key for verification';
-  var pkstartmark = '-----BEGIN PUBLIC KEY-----';
-  var pkendmark = '-----END PUBLIC KEY-----';
+  var logstr = ba2str(b64decode(b64data))
+  var sigmark = 'PageSigner public key for verification'
+  var pkstartmark = '-----BEGIN PUBLIC KEY-----'
+  var pkendmark = '-----END PUBLIC KEY-----'
 
-  var mark_start = logstr.search(sigmark);
-  assert(mark_start !== -1);
-  var pubkey_start = mark_start + logstr.slice(mark_start).search(pkstartmark);
-  var pubkey_end = pubkey_start + logstr.slice(pubkey_start).search(pkendmark) + pkendmark.length;
-  var chunk = logstr.slice(pubkey_start, pubkey_end);
-  var lines = chunk.split('\n');
-  var pk = pkstartmark + '\n';
+  var mark_start = logstr.search(sigmark)
+  assert(mark_start !== -1)
+  var pubkey_start = mark_start + logstr.slice(mark_start).search(pkstartmark)
+  var pubkey_end = pubkey_start + logstr.slice(pubkey_start).search(pkendmark) + pkendmark.length
+  var chunk = logstr.slice(pubkey_start, pubkey_end)
+  var lines = chunk.split('\n')
+  var pk = pkstartmark + '\n'
   for (var i = 1; i < lines.length-1; i++) {
-    var words = lines[i].split(' ');
-    pk = pk + words[words.length-1] + '\n';
+    var words = lines[i].split(' ')
+    pk = pk + words[words.length-1] + '\n'
   }
-  pk = pk + pkendmark;
-  assert(pk.length > 0);
+  pk = pk + pkendmark
+  assert(pk.length > 0)
 
   return pk
 }
@@ -179,7 +179,7 @@ function checkGetConsoleOutputJSON(data, instanceId, launchTime) {
 // This is a sanity check because the instance is stripped of the code which parses userData.
 function checkDescribeInstanceAttributeJSON(data, instanceId) {
   assert('DescribeInstanceAttributeResponse' in data)
-  const res = data.DescribeInstanceAttributeResponse 
+  const res = data.DescribeInstanceAttributeResponse
 
   assert(res.instanceId._text === instanceId)
   assert(!('_text' in res.userData))
@@ -189,7 +189,7 @@ function checkDescribeInstanceAttributeJSON(data, instanceId) {
 
 function checkGetUserJSON(data, ownerId) {
   assert('GetUserResponse' in data)
-  const res = data.GetUserResponse 
+  const res = data.GetUserResponse
 
   assert('GetUserResult' in res)
   assert('User' in res.GetUserResult)
@@ -197,7 +197,7 @@ function checkGetUserJSON(data, ownerId) {
   const usr = res.GetUserResult.User
   assert(usr.UserId === ownerId)
   assert(usr.Arn.indexOf(`${ownerId}:root`) > -1)
-  return true;
+  return true
 }
 
 
@@ -256,7 +256,7 @@ function check_oracle(o, imageID, snapshotID) {
   .then(() => {
     return axios.get(o.DIA)
     .then(({ data }) => {
-      const result = checkDescribeInstanceAttributeJSON(xml2json(data), o.instanceId);
+      const result = checkDescribeInstanceAttributeJSON(xml2json(data), o.instanceId)
       return
     })
     .catch(err => { throw('checkDescribeInstanceAttribute') })
@@ -273,7 +273,7 @@ function check_oracle(o, imageID, snapshotID) {
       id = url.slice(start, start + url.slice(start).search('&'))
       ids.push(id)
     }
-    assert(new Set(ids).size === 1);
+    assert(new Set(ids).size === 1)
     console.log('oracle verification successfully finished')
     return true
   })

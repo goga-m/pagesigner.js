@@ -10,84 +10,84 @@ const { ba2int, assert } = require('./utils')
 
 //js native ArrayBuffer to Array of numbers
 function ab2ba(ab) {
-  var view = new DataView(ab);
-  var int_array = [];
+  var view = new DataView(ab)
+  var int_array = []
   for (var i = 0; i < view.byteLength; i++) {
-    int_array.push(view.getUint8(i));
+    int_array.push(view.getUint8(i))
   }
-  return int_array;
+  return int_array
 }
 
 
 function ba2ab(ba) {
-  var ab = new ArrayBuffer(ba.length);
-  var dv = new DataView(ab);
+  var ab = new ArrayBuffer(ba.length)
+  var dv = new DataView(ab)
   for (var i = 0; i < ba.length; i++) {
-    dv.setUint8(i, ba[i]);
+    dv.setUint8(i, ba[i])
   }
-  return ab;
+  return ab
 }
 
 
 
 function ba2ua(ba) {
-  var ua = new Uint8Array(ba.length);
+  var ua = new Uint8Array(ba.length)
   for (var i = 0; i < ba.length; i++) {
-    ua[i] = ba[i];
+    ua[i] = ba[i]
   }
-  return ua;
+  return ua
 }
 
 function ua2ba(ua) {
-  var ba = [];
+  var ba = []
   for (var i = 0; i < ua.byteLength; i++) {
-    ba.push(ua[i]);
+    ba.push(ua[i])
   }
-  return ba;
+  return ba
 }
 
 /*CryptoJS only exposes word arrays of ciphertexts which is awkward to use
 so we convert word(4byte) array into a 1-byte array*/
 function wa2ba(wordArray) {
-  var byteArray = [];
+  var byteArray = []
   for (var i = 0; i < wordArray.length; ++i) {
-    var word = wordArray[i];
+    var word = wordArray[i]
     for (var j = 3; j >= 0; --j) {
-      byteArray.push((word >> 8 * j) & 0xFF);
+      byteArray.push((word >> 8 * j) & 0xFF)
     }
   }
-  return byteArray;
+  return byteArray
 }
 
 //CryptoJS doesnt accept bytearray input but it does accept a hexstring
 function ba2hex(bytearray) {
   try {
-    var hexstring = '';
+    var hexstring = ''
     for (var i = 0; i < bytearray.length; i++) {
-      var hexchar = bytearray[i].toString(16);
+      var hexchar = bytearray[i].toString(16)
       if (hexchar.length == 1) {
-        hexchar = "0" + hexchar;
+        hexchar = '0' + hexchar
       }
-      hexstring += hexchar;
+      hexstring += hexchar
     }
-    return hexstring;
+    return hexstring
   } catch (e) {
-    var place_for_breakpoint = 0;
+    var place_for_breakpoint = 0
   }
 }
 
 
 //convert a hex string into byte array
 function hex2ba(str) {
-  var ba = [];
+  var ba = []
   //pad with a leading 0 if necessary
   if (str.length % 2) {
-    str = "0" + str;
+    str = '0' + str
   }
   for (var i = 0; i < str.length; i += 2) {
-    ba.push(parseInt("0x" + str.substr(i, 2)));
+    ba.push(parseInt('0x' + str.substr(i, 2)))
   }
-  return ba;
+  return ba
 }
 
 // //Turn a max 4 byte array (big-endian) into an int.
@@ -103,93 +103,93 @@ function hex2ba(str) {
 
 //Turn an int into a bytearray. Optionally left-pad with zeroes
 function bi2ba(x, args) {
-  assert(typeof(x) == "number", "Only can convert numbers");
-  var fixed = null;
+  assert(typeof(x) == 'number', 'Only can convert numbers')
+  var fixed = null
   if (typeof(args) !== 'undefined') {
-    fixed = args.fixed;
+    fixed = args.fixed
   }
-  var bytes = [];
+  var bytes = []
   do {
-    var onebyte = x & (255);
-    x = x >> 8;
-    bytes = [].concat(onebyte, bytes);
-  } while (x !== 0);
-  var padding = [];
+    var onebyte = x & (255)
+    x = x >> 8
+    bytes = [].concat(onebyte, bytes)
+  } while (x !== 0)
+  var padding = []
   if (fixed) {
     for (var i = 0; i < fixed - bytes.length; i++) {
-      padding = [].concat(padding, 0x00);
+      padding = [].concat(padding, 0x00)
     }
   }
-  return [].concat(padding, bytes);
+  return [].concat(padding, bytes)
 }
 
 
 //converts string to bytearray
 function str2ba(str) {
-  if (typeof(str) !== "string") {
-    throw ("Only type string is allowed in str2ba");
+  if (typeof(str) !== 'string') {
+    throw ('Only type string is allowed in str2ba')
   }
-  ba = [];
+  ba = []
   for (var i = 0; i < str.length; i++) {
-    ba.push(str.charCodeAt(i));
+    ba.push(str.charCodeAt(i))
   }
-  return ba;
+  return ba
 }
 
 function ba2str(ba) {
-  if (typeof(ba) !== "object") {
-    throw ("Only type object is allowed in ba2str");
+  if (typeof(ba) !== 'object') {
+    throw ('Only type object is allowed in ba2str')
   }
-  var result = "";
+  var result = ''
   for (var i = 0; i < ba.length; i++) {
-    result += String.fromCharCode(ba[i]);
+    result += String.fromCharCode(ba[i])
   }
-  return result;
+  return result
 }
 
 
 function hmac(key, msg, algo) {
-  var key_hex = ba2hex(key);
-  var msg_hex = ba2hex(msg);
-  var key_words = CryptoJS.enc.Hex.parse(key_hex);
-  var msg_words = CryptoJS.enc.Hex.parse(msg_hex);
-  var hash;
+  var key_hex = ba2hex(key)
+  var msg_hex = ba2hex(msg)
+  var key_words = CryptoJS.enc.Hex.parse(key_hex)
+  var msg_words = CryptoJS.enc.Hex.parse(msg_hex)
+  var hash
   if (algo === 'md5') {
-    hash = CryptoJS.HmacMD5(msg_words, key_words);
-    return wa2ba(hash.words);
+    hash = CryptoJS.HmacMD5(msg_words, key_words)
+    return wa2ba(hash.words)
   } else if (algo === 'sha1') {
-    hash = CryptoJS.HmacSHA1(msg_words, key_words);
-    return wa2ba(hash.words);
+    hash = CryptoJS.HmacSHA1(msg_words, key_words)
+    return wa2ba(hash.words)
   }
 }
 
 
 function sha1(ba) {
-  var ba_obj = CryptoJS.enc.Hex.parse(ba2hex(ba));
-  var hash = CryptoJS.SHA1(ba_obj);
-  return wa2ba(hash.words);
+  var ba_obj = CryptoJS.enc.Hex.parse(ba2hex(ba))
+  var hash = CryptoJS.SHA1(ba_obj)
+  return wa2ba(hash.words)
 }
 
 function sha256(ba) {
-  var ba_obj = CryptoJS.enc.Hex.parse(ba2hex(ba));
-  var hash = CryptoJS.SHA256(ba_obj);
-  return wa2ba(hash.words);
+  var ba_obj = CryptoJS.enc.Hex.parse(ba2hex(ba))
+  var hash = CryptoJS.SHA256(ba_obj)
+  return wa2ba(hash.words)
 }
 
 function md5(ba) {
-  var ba_obj = CryptoJS.enc.Hex.parse(ba2hex(ba));
-  var hash = CryptoJS.MD5(ba_obj);
-  return wa2ba(hash.words);
+  var ba_obj = CryptoJS.enc.Hex.parse(ba2hex(ba))
+  var hash = CryptoJS.MD5(ba_obj)
+  return wa2ba(hash.words)
 }
 
 //input bytearrays must be of equal length
 function xor(a, b) {
-  assert(a.length === b.length, "length mismatch");
-  var c = [];
+  assert(a.length === b.length, 'length mismatch')
+  var c = []
   for (var i = 0; i < a.length; i++) {
-    c.push(a[i] ^ b[i]);
+    c.push(a[i] ^ b[i])
   }
-  return c;
+  return c
 }
 
 
@@ -200,13 +200,13 @@ function xor(a, b) {
 // }
 
 function isdefined(obj) {
-  assert(typeof(obj) !== "undefined", "obj was undefined");
+  assert(typeof(obj) !== 'undefined', 'obj was undefined')
 }
 
 //Not in use for now
 function log() {
   if (verbose) {
-    console.log(Array.prototype.slice.call(arguments));
+    console.log(Array.prototype.slice.call(arguments))
   }
 }
 
@@ -220,74 +220,74 @@ function getRandom(number, window) {
 
 
 function b64encode(aBytes) {
-  return btoa(String.fromCharCode.apply(null, aBytes));
+  return btoa(String.fromCharCode.apply(null, aBytes))
 }
 
 
 function b64decode(sBase64, nBlocksSize) {
-  return atob(sBase64).split("").map(function(c) {
-    return c.charCodeAt(0);
-  });
+  return atob(sBase64).split('').map(function(c) {
+    return c.charCodeAt(0)
+  })
 }
 
 //plaintext must be string
 function dechunk_http(http_data) {
   //'''Dechunk only if http_data is chunked otherwise return http_data unmodified'''
-  http_header = http_data.slice(0, http_data.search('\r\n\r\n') + '\r\n\r\n'.length);
+  http_header = http_data.slice(0, http_data.search('\r\n\r\n') + '\r\n\r\n'.length)
   //#\s* below means any amount of whitespaces
   if (http_header.search(/transfer-encoding:\s*chunked/i) === -1) {
-    return http_data; //#nothing to dechunk
+    return http_data //#nothing to dechunk
   }
-  var http_body = http_data.slice(http_header.length);
+  var http_body = http_data.slice(http_header.length)
 
-  var dechunked = http_header;
-  var cur_offset = 0;
-  var chunk_len = -1; //#initialize with a non-zero value
+  var dechunked = http_header
+  var cur_offset = 0
+  var chunk_len = -1 //#initialize with a non-zero value
   while (true) {
-    var new_offset = http_body.slice(cur_offset).search('\r\n');
+    var new_offset = http_body.slice(cur_offset).search('\r\n')
     if (new_offset === -1) { //#pre-caution against endless looping
       //#pinterest.com is known to not send the last 0 chunk when HTTP gzip is disabled
-      return dechunked;
+      return dechunked
     }
-    var chunk_len_hex = http_body.slice(cur_offset, cur_offset + new_offset);
-    var chunk_len = parseInt(chunk_len_hex, 16);
+    var chunk_len_hex = http_body.slice(cur_offset, cur_offset + new_offset)
+    var chunk_len = parseInt(chunk_len_hex, 16)
     if (chunk_len === 0) {
-      break; //#for properly-formed html we should break here
+      break //#for properly-formed html we should break here
     }
-    cur_offset += new_offset + '\r\n'.length;
-    dechunked += http_body.slice(cur_offset, cur_offset + chunk_len);
-    cur_offset += chunk_len + '\r\n'.length;
+    cur_offset += new_offset + '\r\n'.length
+    dechunked += http_body.slice(cur_offset, cur_offset + chunk_len)
+    cur_offset += chunk_len + '\r\n'.length
   }
-  return dechunked;
+  return dechunked
 }
 
 
 function gunzip_http(http_data) {
-  var http_header = http_data.slice(0, http_data.search('\r\n\r\n') + '\r\n\r\n'.length);
+  var http_header = http_data.slice(0, http_data.search('\r\n\r\n') + '\r\n\r\n'.length)
   //#\s* below means any amount of whitespaces
   if (http_header.search(/content-encoding:\s*deflate/i) > -1) {
     //#TODO manually resend the request with compression disabled
-    throw ('Please set gzip_disabled = 1 in tlsnotary.ini and rerun the audit');
+    throw ('Please set gzip_disabled = 1 in tlsnotary.ini and rerun the audit')
   }
   if (http_header.search(/content-encoding:\s.*gzip/i) === -1) {
-    console.log('nothing to gunzip');
-    return http_data; //#nothing to gunzip
+    console.log('nothing to gunzip')
+    return http_data //#nothing to gunzip
   }
-  var http_body = http_data.slice(http_header.length);
-  var ungzipped = http_header;
+  var http_body = http_data.slice(http_header.length)
+  var ungzipped = http_header
   if (!http_body) {
     //HTTP 304 Not Modified has no body
-    return ungzipped;
+    return ungzipped
   }
-  var inflated = pako.inflate(http_body);
-  ungzipped += ba2str(inflated);
-  return ungzipped;
+  var inflated = pako.inflate(http_body)
+  ungzipped += ba2str(inflated)
+  return ungzipped
 }
 
 function getTime() {
-  var today = new Date();
-  var time = today.getFullYear() + '-' + ("00" + (today.getMonth() + 1)).slice(-2) + '-' + ("00" + today.getDate()).slice(-2) + '-' + ("00" + today.getHours()).slice(-2) + '-' + ("00" + today.getMinutes()).slice(-2) + '-' + ("00" + today.getSeconds()).slice(-2);
-  return time;
+  var today = new Date()
+  var time = today.getFullYear() + '-' + ('00' + (today.getMonth() + 1)).slice(-2) + '-' + ('00' + today.getDate()).slice(-2) + '-' + ('00' + today.getHours()).slice(-2) + '-' + ('00' + today.getMinutes()).slice(-2) + '-' + ('00' + today.getSeconds()).slice(-2)
+  return time
 }
 
 module.exports = {

@@ -6,10 +6,10 @@
 /**
  * A noop padding strategy.
  */
- module.exports = CryptoJS => {
+module.exports = CryptoJS => {
   CryptoJS.pad.NoPadding = {
-    pad: function () { }, 
+    pad: function () { },
     unpad: function () { }
   }
- }
+}
 
