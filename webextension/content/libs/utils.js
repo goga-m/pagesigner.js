@@ -15,7 +15,39 @@ function ba2int(x) {
   return retval;
 }
 
+function arrayBufferToBufferCycle(ab) {
+  var buffer = new Buffer(ab.byteLength);
+  var view = new Uint8Array(ab);
+  for (var i = 0; i < buffer.length; ++i) {
+      buffer[i] = view[i];
+  }
+  return buffer;
+}
+
+function formatSendData(data){
+	var ab = new ArrayBuffer(data.length);
+	var dv = new DataView(ab);
+	for(var i=0; i < data.length; i++){
+		dv.setUint8(i, data[i]);
+	}
+    const buff = arrayBufferToBufferCycle(ab)
+    return buff
+}
+
+
+function toArrayBuffer(buf) {
+    var ab = new ArrayBuffer(buf.length);
+    var view = new Uint8Array(ab);
+    for (var i = 0; i < buf.length; ++i) {
+        view[i] = buf[i];
+    }
+    return ab;
+}
+
 module.exports = {
   ba2int,
-  assert
+  assert,
+  arrayBufferToBufferCycle,
+  formatSendData,
+  toArrayBuffer
 }

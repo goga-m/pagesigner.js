@@ -1,10 +1,9 @@
 /**
  * File: tlsn.js
  */
-const axios = require('axios')
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const CryptoJS = require('./CryptoJS/core')
-const AbstractSocket = require('./socket')
+const Socket = require('./socket')
 const { assert, ba2int  } = require('./utils')
 const BigInteger = require('./jsbn2')
 
@@ -35,123 +34,6 @@ var global_tlsver = [0x03, 0x02];
 function get_xhr() {
   return new XMLHttpRequest();
 }
-
-
-
-
-
-// TODO: Review and modify
-function Socket(name, port) {
-  this.name = name;
-  this.port = port;
-  this.uid = Math.random().toString(36).slice(-10);
-  this.buffer = [];
-  this.recv_timeout = 20 * 1000;
-  console.log('CREATING NEW SOCKET', this.name, this.port, this.uid)
-}
-//inherit the base class
-Socket.prototype = Object.create(AbstractSocket.prototype);
-Socket.prototype.constructor = Socket;
-
-Socket.prototype.connect = function() {
-
-  console.log('DEBUG:102, Socket.prototype.connect CONNECTED')
-  var that = this;
-  return new Promise(function(resolve, reject) {
-
-    sendSocket({
-      'command': 'connect',
-      'args': {
-        'name': that.name,
-        'port': that.port
-      },
-      'uid': that.uid
-    })
-    .then(response => {
-        clearInterval(timer);
-        console.log(response)
-        if (response.retval === 'success') {
-          //endless data fetching loop for the lifetime of this Socket
-          var fetch = function() {
-            sendSocket({
-              'command': 'recv',
-              'uid': that.uid
-            })
-            .then( response => {
-              console.log('fetched some data', response.data.length, that.uid);
-              that.buffer = [].concat(that.buffer, response.data);
-              setTimeout(function() {
-                fetch()
-              }, 2000);
-            });
-          };
-          //only needed for Chrome
-          fetch();
-          resolve('ready');
-        }
-        reject(response.retval);
-      });
-    //dont wait for connect for too long
-    var timer = setTimeout(function() {
-      reject('connect: socket timed out');
-    }, 1000 * 20);
-  });
-};
-Socket.prototype.send = function(data_in) {
-  return sendSocket({
-    'command': 'send',
-      'args': {
-        'data': data_in
-      },
-     'uid': this.uid
-  })
-};
-Socket.prototype.close = function() {
-  console.log('closing socket', this.uid);
-  return sendSocket({
-    'command': 'close',
-    'uid': this.uid
-  })
-};
-
-
-
-
-
-
-// TODO: Review and modify
-function sendSocket(data) {
-  console.log('===========================================')
-  console.log(`COMMAND[${data.command}, ${data.uid}, ${data.args ? data.args.name : ''}]`)
-  return axios.post('http://localhost:3000/', { data })
-  .then(( { data: res } ) => {
-    console.log(`COMMAND RESPONSE[${data.command}, ${data.uid}, ${data.args ? data.args.name : ''}]`, res.length)
-    console.log('--------------------------------------------')
-    return res
-  })
-  .catch(err => {
-    console.log('err', err)
-    throw err
-  })
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 //#constants
 var md5_hash_len = 16;
