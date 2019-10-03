@@ -1,22 +1,9 @@
-// Nodejs depedencies
-var fs = require('fs')
-var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-var axios = require('axios')
-var convert = require('xml-js');
-var atob = require('atob')
-var btoa = require('btoa')
-var crypto = require('crypto')
-var getRandomValues = require('get-random-values')
-
-// Libs
-var AbstractSocket = require('./libs/socket')
-
+const fs = require('fs')
+const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 // Utils
-var { ba2int, assert } = require('./libs/utils')
-
-
+const { ba2int, assert } = require('./libs/utils')
 // CryptoJS libraries
-var CryptoJS = require('./libs/CryptoJS/core')
+const CryptoJS = require('./libs/CryptoJS/core')
 
 // tlns_utils
 var {
@@ -152,7 +139,6 @@ function init() {
   return import_reliable_sites()
   .then(() => getPref('verifiedOracles.' + oracle_hash))
   .then(value => {
-    // TODO: Is oracles_intact necessary?
     if (value === true) {
       oracles_intact = true;
     } else {
