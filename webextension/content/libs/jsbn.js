@@ -1,3 +1,4 @@
+var navigator = {}
 /**
  * File: jsbn.js
  */

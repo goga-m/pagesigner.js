@@ -20,8 +20,6 @@ var oracle = {
 var oracles = [];
 oracles.push(oracle);
 //all servers trusted to perform notary (including non-oracles)
-//TODO: configurable
-var pagesigner_servers = [oracle];
 
 //assuming both events happened on the same day, get the time
 //difference between them in seconds
