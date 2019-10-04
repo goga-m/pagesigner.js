@@ -15,6 +15,7 @@
   ],
   "author": "Goga",
   "license": "ISC",
+  "main": "./src/factory.js",
   "bugs": {
     "url": "https://github.com/goga-m/pagesigner/issues"
   },
