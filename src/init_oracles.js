@@ -1,29 +1,21 @@
 // Utils
-const { assert } = require('./utils')
-const { ba2hex, hex2ba, sha256 } = require('./tlns_utils')
-const { check_oracle } = require('./oracles.js')
+const { assert } = require('./libs/utils')
+const { ba2hex, hex2ba, sha256 } = require('./libs/tlns_utils')
+const { check_oracle } = require('./libs/oracles.js')
 
-function init({ oracles, pubkeys, imageID, snapshotID }) {
-  assert(!!oracles && oracles.length > 0, 'init notarization failed: \'oracles\' Array is not provided')
+function init({ oracle, pubkeys, imageID, snapshotID }) {
+  assert(!!oracle, 'init notarization failed: \'oracle\' Object is not provided')
   assert(!!pubkeys, 'init notarization failed: \'pubkeys\' String/Function is not provided')
   assert(!!imageID, 'init notarization failed: \'imageID\' String is not provided')
   assert(!!snapshotID, 'init notarization failed: \'snapshotID\' String is not provided')
 
-  const chosen_notary = oracles[Math.random() * (oracles.length) << 0]
-  const oracle_hash = ba2hex(sha256(JSON.stringify(chosen_notary)))
-  const was_oracle_verified = false
+  const oracle_hash = ba2hex(sha256(JSON.stringify(oracle)))
 
   return import_reliable_sites(pubkeys)
-  .then(reliable_sites => {
-    console.debug('\nReliable sites are: ', reliable_sites.map(s => s.name), '\n')
-    return check_oracle(chosen_notary, imageID, snapshotID)
-    .then(() => {
-      return {
-        reliable_sites,
-        chosen_notary,
-        was_oracle_verified: true
-      }
-    })
+  .then(reliableSites => {
+    console.debug('\nReliable sites are: ', reliableSites.map(s => s.name), '\n')
+    return check_oracle(oracle, imageID, snapshotID)
+    .then(() => ({ reliableSites, oracle }))
   })
 }
 

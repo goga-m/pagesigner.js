@@ -1,7 +1,7 @@
-const { ba2int, assert } = require('./utils')
-const { fixcerts, verifyCertChain, Certificate } = require('./verifychain/verifychain')
-const { ua2ba, bi2ba, str2ba, ba2str, sha256, getTime } = require('./tlns_utils')
-const { TLSNClientSession, prepare_pms, get_certificate, decrypt_html, start_audit } = require('./tlsn')
+const { ba2int, assert } = require('./libs/utils')
+const { fixcerts, verifyCertChain, Certificate } = require('./libs/verifychain/verifychain')
+const { ua2ba, bi2ba, str2ba, ba2str, sha256, getTime } = require('./libs/tlns_utils')
+const { TLSNClientSession, prepare_pms, get_certificate, decrypt_html, start_audit } = require('./libs/tlsn')
 
 
 function getHeaders(obj) {
@@ -43,9 +43,9 @@ function getHeaders(obj) {
   }
 }
 
-function startNotarizing(headers, server, port, chosen_notary, reliable_sites) {
+function startNotarizing(headers, server, port, oracle, reliable_sites) {
   const random_uid = Math.random().toString(36).slice(-10)
-  if (!chosen_notary) {
+  if (!oracle) {
     console.log({
       title: 'PageSigner error',
       text: 'Cannot notarize because something is wrong with PageSigner server. Please try again later'
@@ -75,7 +75,7 @@ function startNotarizing(headers, server, port, chosen_notary, reliable_sites) {
       var tries = 0
       var loop = function(resolve, reject) {
         tries += 1
-        prepare_pms(modulus, undefined, reliable_sites, chosen_notary, random_uid).then(function(args) {
+        prepare_pms(modulus, undefined, reliable_sites, oracle, random_uid).then(function(args) {
           resolve(args)
         }).catch(function(error) {
           console.log('caught error', error)
@@ -99,7 +99,7 @@ function startNotarizing(headers, server, port, chosen_notary, reliable_sites) {
     })
   })
   .then(function(args) {
-    return start_audit(modulus, certsha256, server, port, headers, args[0], args[1], args[2], chosen_notary, random_uid)
+    return start_audit(modulus, certsha256, server, port, headers, args[0], args[1], args[2], oracle, random_uid)
   })
   .then(function(args2) {
     return save_session_and_open_data(args2, server)
@@ -267,7 +267,7 @@ function writeDatafile(data_with_headers, session_dir) {
 
 
 //imported_data is an array of numbers
-// function verify_tlsn(data, from_past, chosen_notary) {
+// function verify_tlsn(data, from_past, oracle) {
 //   var offset = 0
 //   if (ba2str(data.slice(offset, offset += 29)) !== 'tlsnotary notarization file\n\n') {
 //     throw ('wrong header')
@@ -319,7 +319,7 @@ function writeDatafile(data_with_headers, session_dir) {
 //   if (from_past) {
 //     signing_key = notary_pubkey
 //   } else {
-//     signing_key = chosen_notary.modulus
+//     signing_key = oracle.modulus
 //   }
 //   if (!verify_commithash_signature(signed_data, sig, signing_key)) {
 //     throw ('notary signature verification failed')
@@ -368,9 +368,9 @@ function makeSessionDir(server, creationTime, is_imported) {
 
 
 //imported_data is an array of numbers
-// function verify_tlsn_and_show_data(imported_data, create, chosen_notary) {
+// function verify_tlsn_and_show_data(imported_data, create, oracle) {
 //   try {
-//     var a = verify_tlsn(imported_data, create, chosen_notary)
+//     var a = verify_tlsn(imported_data, create, oracle)
 //   } catch (e) {
 //     console.log({
 //       title: 'PageSigner failed to import file',
@@ -457,9 +457,9 @@ function verifyCert(chain) {
   return false
 }
 
-function notarize({ chosen_notary, reliable_sites, url, headers, method = 'GET', formData = [] }) {
-  assert(!!chosen_notary, 'Notarize init failed: \'chosen_notary\' is not provided')
-  assert(!!reliable_sites && reliable_sites.length > 0, 'Notarize init failed: \'reliable_sites\' Array is not provided or empty')
+function notarize({ oracle, reliableSites, url, headers, method = 'GET', formData = [] }) {
+  assert(!!oracle, 'Notarize init failed: \'oracle\' is not provided')
+  assert(!!reliableSites && reliableSites.length > 0, 'Notarize init failed: \'reliableSites\' Array is not provided or empty')
 
   // Defaults
   const params = {
@@ -486,11 +486,10 @@ function notarize({ chosen_notary, reliable_sites, url, headers, method = 'GET',
     'url': url,
     requestBody: { formData }
   }
-
   var rv = getHeaders(params)
   //we must return fast hence the async invocation
   console.log('Start notarization for', rv.headers, rv.server, rv.port, '\n')
-  return startNotarizing(rv.headers, rv.server, rv.port, chosen_notary, reliable_sites)
+  return startNotarizing(rv.headers, rv.server, rv.port, oracle, reliableSites)
 }
 
-module.exports = { notarize }
+module.exports = { startNotarizing: notarize }
