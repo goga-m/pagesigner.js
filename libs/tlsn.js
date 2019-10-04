@@ -259,13 +259,10 @@ function get_certificate(server, port) {
     'port': port,
     'tlsver': global_tlsver
   })
-  console.log('DEBUG:100, get_certificate probe_session')
-  console.log(probe_session.server_name, probe_session.ssl_port)
 
   probe_session.sckt = new Socket(probe_session.server_name, probe_session.ssl_port)
   return probe_session.sckt.connect()
   .then(function() {
-    console.log('DEBUG:101, CONNECTED')
     probe_session.send_client_hello()
     return probe_session.get_server_hello()
   })

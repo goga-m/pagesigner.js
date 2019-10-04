@@ -14,7 +14,6 @@ const asn1 = require('asn1.js')
 const Buffer = require('buffer').Buffer
 const origcerts = require('./rootcertslist')
 const { KJUR } = require('jsrsasign')
-var certs = origcerts
 
 //--------BEGIN copied from https://github.com/indutny/asn1.js/blob/master/rfc/3280/index.js
 var AlgorithmIdentifier = asn1.define('AlgorithmIdentifier', function() {
@@ -147,7 +146,7 @@ function pem2der(certpem){
 
 //change the keys from ambigous string that bitpay provides
 //to unique subject strings and associated pubkeys
-function fixcerts(){
+function fixcerts(certs){
   var tmpcerts = {'trusted_pubkeys':[]}
   var i = 0
   for (var key in certs){
@@ -172,7 +171,7 @@ function fixcerts(){
     var pk = getPubkey(certder)
     tmpcerts['trusted_pubkeys'].push(b64encode(ua2ba(pk)))
   }
-  certs = tmpcerts
+  return tmpcerts
 }
 
 
@@ -230,7 +229,7 @@ function getSubjectString(cert, whose, extended){
 //---an adopted copy of PaymentProtocol.verifyCertChain from
 //https://github.com/bitpay/bitcore-payment-protocol/blob/master/lib/browser.js
 var verifyCertChain = function(chain) {
-
+  const certs = fixcerts(origcerts)
   //Check if there is no root cert in the chain
   //and if so, add it (provided that we know such root CA)
 
