@@ -45,7 +45,7 @@ function modulus_from_pubkey(pem_pubkey) {
 
 
 
-function checkDescribeInstancesJSON(data, instanceId, IP, imgId) {
+function checkDescribeInstances(data, instanceId, IP, imgId) {
 
   assert('DescribeInstancesResponse' in data)
   const res = data.DescribeInstancesResponse
@@ -100,8 +100,7 @@ function checkDescribeInstancesJSON(data, instanceId, IP, imgId) {
 }
 
 
-function checkDescribeVolumesJSON(data, instanceId, volumeId, volAttachTime, snapId) {
-  console.log(instanceId, volumeId, volAttachTime, snapId)
+function checkDescribeVolumes(data, instanceId, volumeId, volAttachTime, snapId) {
   assert('DescribeVolumesResponse' in data)
   const res = data.DescribeVolumesResponse
 
@@ -134,7 +133,7 @@ function checkDescribeVolumesJSON(data, instanceId, volumeId, volAttachTime, sna
 }
 
 
-function checkGetConsoleOutputJSON(data, instanceId, launchTime) {
+function checkGetConsoleOutput(data, instanceId, launchTime) {
 
   assert('GetConsoleOutputResponse' in data)
   const res = data.GetConsoleOutputResponse
@@ -187,7 +186,7 @@ function checkDescribeInstanceAttributeJSON(data, instanceId) {
 }
 
 
-function checkGetUserJSON(data, ownerId) {
+function checkGetUser(data, ownerId) {
   assert('GetUserResponse' in data)
   const res = data.GetUserResponse
 
@@ -203,45 +202,46 @@ function checkGetUserJSON(data, ownerId) {
 
 function check_oracle(o, imageID, snapshotID) {
   // DI
+  console.log('[checkDescribeInstances] get', o.DI, '\n')
   return axios.get(o.DI)
   .then(({ data }) => {
-    return checkDescribeInstancesJSON(xml2json(data), o.instanceId, o.IP, imageID)
+    return checkDescribeInstances(xml2json(data), o.instanceId, o.IP, imageID)
   })
-  .catch(err => { throw('checkDescribeInstances') })
 
   // DV
   .then(args => {
+    console.log('[checkDescribeVolumes] get', o.DV, '\n')
     return axios.get(o.DV)
     .then(({ data }) => {
-      const result = checkDescribeVolumesJSON(xml2json(data), o.instanceId, args.volumeId, args.volAttachTime, snapshotID)
+      const result = checkDescribeVolumes(xml2json(data), o.instanceId, args.volumeId, args.volAttachTime, snapshotID)
       return {
         'ownerId': args.ownerId,
         'launchTime': args.launchTime
       }
     })
-    .catch(err => { throw('checkDescribeVolumes') })
   })
 
   // GU
   .then(args => {
+    console.log('[checkGetUser] get', o.GU, '\n')
     return axios.get(o.GU)
     .then(({ data }) => {
-      const result = checkGetUserJSON(data, args.ownerId)
+      const result = checkGetUser(data, args.ownerId)
       return args.launchTime
     })
-    .catch(err => { throw('checkGetUser') })
   })
 
   // GCO
   .then(launchTime => {
+    console.log('[checkGetConsoleOutput] get', o.GCO, '\n')
     return axios.get(o.GCO)
     .then(({ data }) => {
       try {
-        var result = checkGetConsoleOutputJSON(xml2json(data), o.instanceId, launchTime)
+        var result = checkGetConsoleOutput(xml2json(data), o.instanceId, launchTime)
       }
       catch (e) {
         console.log(e)
-        throw('checkGetConsoleOutput')
+        throw(e)
       }
 
       if (modulus_from_pubkey(result).toString() !== o.modulus.toString()) {
@@ -254,12 +254,12 @@ function check_oracle(o, imageID, snapshotID) {
 
   // DIA
   .then(() => {
+    console.log('[checkDescribeInstanceAttributeJSON] get', o.DIA, '\n')
     return axios.get(o.DIA)
     .then(({ data }) => {
       const result = checkDescribeInstanceAttributeJSON(xml2json(data), o.instanceId)
       return
     })
-    .catch(err => { throw('checkDescribeInstanceAttribute') })
   })
   .then(() => {
     var mark = 'AWSAccessKeyId='
@@ -274,7 +274,6 @@ function check_oracle(o, imageID, snapshotID) {
       ids.push(id)
     }
     assert(new Set(ids).size === 1)
-    console.log('oracle verification successfully finished')
     return true
   })
 
