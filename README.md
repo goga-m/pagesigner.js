@@ -137,7 +137,7 @@ tlsn.notarize({
 .catch(console.log)
 
 ```
-You can see the format of oracles settings in `/examples/oracles.json` [here](https://github.com/goga-m/pagesigner/blob/master/examples/oracles.json).
+You can see the format of oracles settings in `/examples/oracles.json` [here](https://github.com/goga-m/pagesigner.js/blob/master/examples/oracles.json).
 
 
 
