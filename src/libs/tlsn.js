@@ -343,7 +343,6 @@ function start_audit(modulus, certhash, name, port, headers, ee_secret, ee_pad_s
       throw ('Failed to verify MAC for server finished')
     }
     var plaintext = decrypt_html(tlsn_session)
-    console.log('PLAIN TEXT')
     return [tlsn_session.chosen_cipher_suite,
       tlsn_session.client_random,
       tlsn_session.server_random,
@@ -2118,10 +2117,120 @@ function tls_10_prf(seed, args) {
   return [P_MD5, P_SHA_1, PRF]
 }
 
+// Format
+//data_with_headers is a string
+function formatDataOutput(data_with_headers, pgsg, metaDomainName) {
+  var rv = data_with_headers.split('\r\n\r\n')
+  var headers = rv[0]
+  var data = rv.splice(1).join('\r\n\r\n')
+  var header_lines = headers.split('\r\n')
+  var type = 'unknown'
+  for (var i = 0; i < header_lines.length; i++) {
+    if (header_lines[i].search(/content-type:\s*/i) > -1) {
+      type = get_type(header_lines[i])
+      break
+    }
+  }
+
+  function get_type(line){
+    var t
+    var match = line.match('application/|text/|image/')
+    if (!match) {
+      t = 'unknown'
+    }
+    else {
+      var afterslash = line.slice(match.index + match[0].length)
+      //search until either + , ; or <space> is encountered
+      var delimiter = afterslash.match(/\+|;| /)
+      if (!delimiter) {
+        t = afterslash
+      }
+      else {
+        t = afterslash.slice(0, delimiter.index)
+      }
+    }
+    if (!t.length) t = 'unknown'
+    if (t == 'vnd.ms-excel') t = 'xls'
+    if (t == 'vnd.openxmlformats-officedocument.spreadsheetml.sheet') t = 'xlsx'
+    if (t == 'plain') t = 'txt'
+    return t
+  }
+
+
+  if (type === 'html') {
+    //disabling for now because there are no issues displaying without the marker
+    //html needs utf-8 byte order mark
+    //data = ''.concat(String.fromCharCode(0xef, 0xbb, 0xbf), data);
+  }
+
+  return {
+    dataType: type,
+    data: str2ba(data),
+    metaDomainName,
+    'pgsg.pgsg': pgsg,
+    'raw.txt': data_with_headers
+  }
+}
+
+function getModulus(cert) {
+  var c = Certificate.decode(new Buffer(cert), 'der')
+  var pk = c.tbsCertificate.subjectPublicKeyInfo.subjectPublicKey.data
+  var pkba = ua2ba(pk)
+  //expected modulus length 256, 384, 512
+  var modlen = 256
+  if (pkba.length > 384) modlen = 384
+  if (pkba.length > 512) modlen = 512
+  var modulus = pkba.slice(pkba.length - modlen - 5, pkba.length - 5)
+  return modulus
+}
+
+function getCommonName(cert) {
+  var c = Certificate.decode(new Buffer(cert), 'der')
+  var fields = c.tbsCertificate.subject.value
+  for (var i = 0; i < fields.length; i++) {
+    if (fields[i][0].type.toString() !== [2, 5, 4, 3].toString()) continue
+    //first 2 bytes are DER-like metadata
+    return ba2str(fields[i][0].value.slice(2))
+  }
+  return 'unknown'
+}
+
+function verifyCert(chain) {
+  var chainperms = permutator(chain)
+  for (var i = 0; i < chainperms.length; i++) {
+    if (verifyCertChain(chainperms[i])) {
+      return true
+    }
+  }
+  return false
+}
+
+function permutator(inputArr) {
+  var results = []
+
+  function permute(arr, memo) {
+    var cur, memo = memo || []
+
+    for (var i = 0; i < arr.length; i++) {
+      cur = arr.splice(i, 1)
+      if (arr.length === 0) {
+        results.push(memo.concat(cur))
+      }
+      permute(arr.slice(), memo.concat(cur))
+      arr.splice(i, 0, cur[0])
+    }
+
+    return results
+  }
+
+  return permute(inputArr)
+}
+
 module.exports = {
   TLSNClientSession,
   prepare_pms,
   get_certificate,
   decrypt_html,
-  start_audit
+  start_audit,
+  verify_commithash_signature
 }

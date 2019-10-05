@@ -6,7 +6,22 @@ const atob = require('atob')
 const btoa = require('btoa')
 const CryptoJS = require('./CryptoJS/core')
 const getRandomValues = require('get-random-values')
-const { ba2int, assert } = require('./utils')
+
+function assert(condition, message) {
+  if (!condition) {
+    throw message || 'Assertion failed'
+  }
+}
+
+//Turn a max 4 byte array (big-endian) into an int.
+function ba2int(x) {
+  assert(x.length <= 8, 'Cannot convert bytearray larger than 8 bytes')
+  var retval = 0
+  for (var i = 0; i < x.length; i++) {
+    retval |= x[x.length - 1 - i] << 8 * i
+  }
+  return retval
+}
 
 //js native ArrayBuffer to Array of numbers
 function ab2ba(ab) {

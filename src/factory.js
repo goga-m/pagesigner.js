@@ -2,12 +2,13 @@ const fs = require('fs')
 const path = require('path')
 // Utils
 const { startNotarizing } = require('./notarize')
+const { verify } = require('./audit')
 const { init } = require('./init_oracles')
 const { assert } = require('./libs/utils')
 const tlsnotaryOracle = require('./tlsnotary_oracles.json')
 const defaultPubkeys = fs.readFileSync(path.resolve(__dirname,'default_pubkeys.txt'), 'utf8')
 
-const PageSigner = ({ oracleOptions = {}, pubkeys: { pubkeysUTF8 } }) => {
+const PageSigner = ({ oracleOptions = {}, pubkeys: { pubkeysUTF8 } = {}} = {}) => {
   // Parameters
   let oracle = oracleOptions.oracle
   let imageID = oracleOptions.imageID
@@ -64,6 +65,10 @@ const PageSigner = ({ oracleOptions = {}, pubkeys: { pubkeysUTF8 } }) => {
     })
   }
 
+  const audit = async (data = {}) => {
+    return verify(data)
+  }
+
   /**
    * Add default parameters if not provided
    *
@@ -76,7 +81,6 @@ const PageSigner = ({ oracleOptions = {}, pubkeys: { pubkeysUTF8 } }) => {
       oracle = tlsnotaryOracle.oracle
       imageID = tlsnotaryOracle.imageID
       snapshotID = tlsnotaryOracle.snapshotID
-      console.log('added default options', oracle)
     }
 
     if(!pubkeys) {
@@ -88,7 +92,7 @@ const PageSigner = ({ oracleOptions = {}, pubkeys: { pubkeysUTF8 } }) => {
   defaultOptions()
   validateOptions()
 
-  return { checkOracle, notarize }
+  return { checkOracle, notarize, audit }
 }
 
 module.exports = PageSigner
