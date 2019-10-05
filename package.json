@@ -1,6 +1,6 @@
 {
   "name": "pagesigner.js",
-  "version": "0.0.8",
+  "version": "0.1.4",
   "description": "A NodeJS library to notarize web requests using the TLSNotary cryptographic mechanism.",
   "main": "./src/factory.js",
   "scripts": {
