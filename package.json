@@ -26,6 +26,7 @@
     "btoa": "^1.2.1",
     "get-random-values": "^1.2.0",
     "jsrsasign": "^7.2.2",
+    "pako": "^1.0.10",
     "xml-js": "^1.6.11",
     "xmlhttprequest": "^1.8.0"
   }

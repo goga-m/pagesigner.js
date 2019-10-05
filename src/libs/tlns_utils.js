@@ -4,8 +4,9 @@
 
 const atob = require('atob')
 const btoa = require('btoa')
-const CryptoJS = require('./CryptoJS/core')
 const getRandomValues = require('get-random-values')
+const pako = require('pako')
+const CryptoJS = require('./CryptoJS/core')
 
 function assert(condition, message) {
   if (!condition) {
