@@ -91,7 +91,7 @@ ps.audit(pgsgData)
   //   'pgsg.pgsg':      Notarized file data (byte array),
   //                     including server's response headers & data,
   //   'metaDomainName': Server's domain name (String),
-  //   'raw.txt':        Notarize filed raw text format (String)
+  //   'raw.txt':        Notarized file raw text format (String)
   // }
 
   console.log(res)
@@ -121,7 +121,7 @@ const PageSigner = require('pagesigner.js')
 const { oracle, imageID, snapshotID } = JSON.parse(fs.readFileSync('./oracles.json'))
 
 // Instance with custom oracle settings
-const  = PageSigner({
+const ps = PageSigner({
   oracleOptions: {
     imageID,
     snapshotID,
@@ -130,7 +130,7 @@ const  = PageSigner({
 })
 
 // Start notarizing
-tlsn.notarize({
+ps.notarize({
   url: 'https://api-pub.bitfinex.com/v2/tickers?symbols=tBTCUSD'
 })
 .then(console.log)
