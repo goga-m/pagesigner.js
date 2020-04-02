@@ -16,7 +16,7 @@
   "author": "Goga",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/goga-m/pagesigner/issues"
+    "url": "https://github.com/goga-m/pagesigner.js/issues"
   },
   "homepage": "https://github.com/goga-m/pagesigner#readme",
   "dependencies": {

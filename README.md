@@ -13,7 +13,7 @@ For more information on how TLSNotary technology works see
 
 This is not an official repository of the TLSNotary. Please refer to [https://github.com/tlsnotary](https://github.com/tlsnotary) for more information.
 
-**Notice**: This repo is a work in progress and significant changes may follow, as well as many use cases need to be tested.
+**Important Notice**: TLSNotary by design, only supports TLS 1.0 and 1.1 versions which are deprecated due to known vulnerabilities.
 
 ## Installation
 
