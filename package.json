@@ -22,7 +22,7 @@
   "dependencies": {
     "asn1.js": "^5.2.0",
     "atob": "^2.1.2",
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "btoa": "^1.2.1",
     "get-random-values": "^1.2.0",
     "jsrsasign": "^8.0.19",
